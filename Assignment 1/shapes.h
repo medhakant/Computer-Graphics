@@ -63,7 +63,7 @@ class shape{
         double refractive_index;
 
     public:
-    
+
         shape(vec3 c,vec3 n,color co,double d,double s,double reflec,double refrac,double refrac_index){
             center = c;
             normal = n;
@@ -169,8 +169,29 @@ class sphere : public shape{
             double d = pow(b,2)-4*a*c;
             vec3 intersection_point = r.getPoint((-1*(b+sqrt(d)))/(2*a));
             vec3 normal = (intersection_point - getCenter()).getUnitVector();
+            double refrac_index = getRefractiveIndex();
+            if(r.getMedium()=="glass"){
+                normal = normal*-1;
+                refrac_index = 1/refrac_index;
+            }
             ray reflected = ray(intersection_point,r.getDirection() - normal*2*(r.getDirection().dot(normal)));
-            return raytrace(intersection_point,r,normal,reflected,ray(vec3(0,0,0),vec3(0,0,0)),getColor());
+            ray refracted = ray(vec3(0,0,0),vec3(0,0,0));
+            if(getRefractiveIndex()>0){
+                double theta1 = acos(abs(normal.dot(r.getDirection().getUnitVector()*-1)));
+                vec3 m = (r.getDirection().getUnitVector() + normal*cos(theta1))/sin(theta1);
+                if(!(r.getMedium()=="glass" && theta1 > asin(1/getRefractiveIndex()))){
+                    double theta2 = asin(sin(theta1)/refrac_index);
+                    vec3 refrac_dir = m*sin(theta2) - normal*cos(theta2);    
+                    refracted = ray(intersection_point,refrac_dir);
+                    if(r.getMedium()=="air"){
+                        refracted.setMediumGlass();
+                    }
+                }else{
+                    refracted = ray(intersection_point,m);
+                }
+                
+            }
+            return raytrace(intersection_point,r,normal,reflected,refracted,getColor());
         }
 
 };

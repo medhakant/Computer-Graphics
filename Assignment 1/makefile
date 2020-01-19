@@ -6,8 +6,8 @@ OBJ = main.o
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS) $(LIBS)
 
-graphics: $(OBJ)
+snowman: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 clean:
-	rm -f *.o *~ graphics
+	rm -f *.o *~ snowman

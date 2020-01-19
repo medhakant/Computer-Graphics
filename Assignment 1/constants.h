@@ -5,3 +5,10 @@
 #define FOVY 60
 #define MAXDEPTH 4
 #define SPECULAR 10
+#define REFLEC 0.5
+#define REFRAC 2
+#define DA 0.7
+#define DB 0.4
+#define DC 0.1
+#define AMBIENT 0.2
+#define CAMERAD 6

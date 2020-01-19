@@ -32,6 +32,10 @@ class scene{
             all_objects.insert(p);
         }
 
+        void addVisible(shape* s){
+            visible_objects.insert(s);
+        }
+
         void render(GLubyte* data,double xoffset,double yoffset) const{
             double sintheta = sin(xoffset);
             double costheta = cos(xoffset);
@@ -43,7 +47,7 @@ class scene{
                     double ycoor = -1*(i-(HEIGHT/2.0))*tan(PI*FOVY/360.0)/(HEIGHT/2.0);
                     double zcoor = -1;
                     vec3 dir = vec3(xcoor*costheta+zcoor*sintheta,ycoor,-1*xcoor*sintheta+zcoor*costheta);
-                    vec3 camera = vec3(7*sintheta,0,7*costheta);
+                    vec3 camera = vec3(CAMERAD*sintheta,0,CAMERAD*costheta);
                     ray r = ray(camera,dir);
                     color c = getIntersectionColor(r,0);
                     data[((i*height)+j)*3] = std::min(c.getRed(),255);
@@ -56,7 +60,7 @@ class scene{
         bool isLightBlocked(ray r) const{
             std::set<shape*>::iterator it;
             for(it=visible_objects.begin();it!=visible_objects.end();it++){
-                if((*it)->shapeType("sphere") && (*it)->willIntersect(r)){
+                if(!(*it)->shapeType("light") && (*it)->willIntersect(r)){
                     return true;
                 }
             }
@@ -79,7 +83,11 @@ class scene{
                         return s->getColor();
                     }else{
                         raytrace rt = s->getIntersection(r);
-                        return getLightIntersection(rt,s) + getIntersectionColor(rt.getReflected(),depth+1)*0.05;
+                        color result = rt.getColor()*AMBIENT + getLightIntersection(rt,s) + getIntersectionColor(rt.getReflected(),depth+1)*s->getReflection()*REFLEC;
+                        if(s->getRefractiveIndex()>0 && rt.getRefracted().getDirection().magnitude()>0){
+                            result = result + getIntersectionColor(rt.getRefracted(),depth+1)*s->getRefraction()*REFRAC;
+                        }
+                        return result;
                     }
                 }else{
                     return color(0,0,0);
@@ -98,7 +106,11 @@ class scene{
                         return s->getColor();
                     }else{
                         raytrace rt = s->getIntersection(r);
-                        return getLightIntersection(rt,s) + getIntersectionColor(rt.getReflected(),depth+1)*0.05;
+                        color result =  getLightIntersection(rt,s) + getIntersectionColor(rt.getReflected(),depth+1)*s->getReflection()*REFLEC;
+                        if(s->getRefractiveIndex()>0 && rt.getRefracted().getDirection().magnitude()>0){
+                            result = result + getIntersectionColor(rt.getRefracted(),depth+1)*s->getRefraction()*REFRAC;
+                        }
+                        return result;
                     }
                 }else{
                     return color(0,0,0);
@@ -110,18 +122,18 @@ class scene{
         }
 
         color getLightIntersection(raytrace rt,shape* s) const{
-            color c = rt.getColor()*0.1;
+            color c;
             std::set<light*>::iterator it;
             for(it=tubelights.begin();it!=tubelights.end();it++){
                 vec3 ray_dir_to_light = ((*it)->getMidPoint()-rt.getIntersection()).getUnitVector();
                 ray light_ray = ray(rt.getIntersection(),ray_dir_to_light);
                 if(!isLightBlocked(light_ray)){
                     double distance = ((*it)->getMidPoint()-rt.getIntersection()).magnitude();
-                    double distance_factor = 0.7*pow(distance,2) + (0.1*distance) + 0.1;
+                    double distance_factor = DA*pow(distance,2) + (DB*distance) + DC;
                     vec3 h = (ray_dir_to_light - rt.getIncident().getDirection().getUnitVector()).getUnitVector();
                     double diffuse_component = (s->getDiffuse()*(rt.getNormal().getUnitVector().dot(ray_dir_to_light)));
                     double specular_component = s->getSpecular()*pow(rt.getNormal().getUnitVector().dot(h),SPECULAR);
-                    c = c + s->getColor()*((diffuse_component + specular_component)*s->getReflection()/distance_factor);
+                    c = s->getColor()*((diffuse_component + specular_component)/distance_factor);
                 }
             }
             return c;
