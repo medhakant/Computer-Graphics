@@ -3,15 +3,16 @@
 #include <iostream>
 #include "GL/glew.h"
 #include <GLFW/glfw3.h>
-#include "constants.h"
-#include "shapes.h"
-#include <vector>
 #include <algorithm>
+#include "scene.h"
 #define QUIT(m,v)      { fprintf(stderr, "%s:%s\n", m, v); exit(1); }
-
+#define PI 3.14159265
+#define FOVX 60
+#define FOVY 60
 float xoffset = 0;
 float yoffset = 0;
 GLubyte data[WIDTH*HEIGHT*3];
+scene snowman;
 
 static void error_callback(int error, const char* description)
 {
@@ -63,99 +64,20 @@ private:
    }
 };
 
-void render(){
-   std::cout << "Frame Rendered!\n";
-   int height = HEIGHT;
-   int width = WIDTH;
-   sphere s1 = sphere(vec3(0,-1,0),vec3(0,1,0),1,90,color(255,0,0),0.7,0.3,0.9,0,9);
-   sphere s2 = sphere(vec3(0,0.4,0),vec3(0,1,0),0.5,60,color(255,0,0),0.7,0.3,0.9,0,9);
-   sphere s3 = sphere(vec3(0,1.0,0),vec3(0,1,0),0.30,90,color(255,0,0),0.7,0.3,0.9,0,9);
-   plane p1 = plane(vec3(0,-2,0),vec3(0,1,0),4,color(255,0,0),0.7,0.3,0.9,0,9);
-   plane p2 = plane(vec3(0,0,-2),vec3(0,0,1),4,color(255,0,0),0.7,0.3,0.9,0,9);
-   light l1 = light(vec3(2,-2,-2),vec3(0,1,0),1/25.0,1,color(255,0,0),0.7,0.3,0.9,0,9);
-   light l2 = light(vec3(-2,-2,-2),vec3(0,1,0),1/25.0,1,color(255,0,0),0.7,0.3,0.9,0,9);
-   light l3 = light(vec3(-2,-2, 2),vec3(0,1,0),1/25.0,1,color(255,0,0),0.7,0.3,0.9,0,9);
-   light l4 = light(vec3(2,-2, 2),vec3(0,1,0),1/25.0,1,color(255,0,0),0.7,0.3,0.9,0,9);
-
-   double sintheta = sin(xoffset);
-   double costheta = cos(xoffset);
-   for(int i=0;i<height*width*3;i++) data[i] = 0;
-   for(int i=0;i<height;i++){
-      for(int j=0;j<width;j++){
-         double xcoor = (j-(WIDTH/2.0))*tan(PI*FOVX/360.0)/(WIDTH/2.0);
-         double ycoor = -1*(i-(HEIGHT/2.0))*tan(PI*FOVY/360.0)/(HEIGHT/2.0);
-         double zcoor = -1;
-         vec3 dir = vec3(xcoor*costheta+zcoor*sintheta,ycoor,-1*xcoor*sintheta+zcoor*costheta);
-         vec3 camera = vec3(5*sintheta,0,5*costheta);
-         ray r = ray(camera,dir);
-         std::vector<double> intersection;
-         if(s1.willIntersect(r)){
-            double distance = (camera- s1.intersection(r)).magnitude();
-            intersection.push_back(distance);
-         }
-         if(s2.willIntersect(r)){
-            double distance = (camera- s2.intersection(r)).magnitude();
-            intersection.push_back(distance);
-         }
-         if(s3.willIntersect(r)){
-            double distance = (camera- s3.intersection(r)).magnitude();
-            intersection.push_back(distance);
-         }
-         if(p1.willIntersect(r)){
-            double distance = (camera- p1.intersection(r)).magnitude();
-            intersection.push_back(distance);
-         }
-         if(p2.willIntersect(r)){
-            double distance = (camera- p2.intersection(r)).magnitude();
-            intersection.push_back(distance);
-         }
-         if(intersection.size()>0){
-            std::sort(intersection.begin(),intersection.end());
-            double distance = intersection.at(0);
-            double division_factor = (1*pow(distance,2) + 0.1*distance + 0.1);
-            data[((i*height)+j)*3] = (255/division_factor);
-            data[((i*height)+j)*3+1] = (255/division_factor);
-            data[((i*height)+j)*3+2] = (255/division_factor);
-         }
-         if(l1.willIntersect(r)){
-            data[((i*height)+j)*3] = 255;
-            data[((i*height)+j)*3+1] = 255;
-            data[((i*height)+j)*3+2] = 255;
-         }
-         if(l2.willIntersect(r)){
-            data[((i*height)+j)*3] = 255;
-            data[((i*height)+j)*3+1] = 255;
-            data[((i*height)+j)*3+2] = 255;
-         }
-         if(l3.willIntersect(r)){
-            data[((i*height)+j)*3] = 255;
-            data[((i*height)+j)*3+1] = 255;
-            data[((i*height)+j)*3+2] = 255;
-         }
-         if(l4.willIntersect(r)){
-            data[((i*height)+j)*3] = 255;
-            data[((i*height)+j)*3+1] = 255;
-            data[((i*height)+j)*3+2] = 255;
-         }
-         
-      }
-   }
-}
-
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
       xoffset += -(15*PI)/180.0;
-      render();
+      snowman.render(data,xoffset,yoffset);
    }else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
       xoffset += (15*PI)/180.0;
-      render();
+      snowman.render(data,xoffset,yoffset);
    }else if (key == GLFW_KEY_UP && action == GLFW_PRESS){
       yoffset += -15;
-      render();
+      snowman.render(data,xoffset,yoffset);
    }else if (key == GLFW_KEY_DOWN && action == GLFW_PRESS){
       yoffset += 15;
-      render();
+      snowman.render(data,xoffset,yoffset);
    }
 }
 
@@ -202,10 +124,65 @@ int main( int argc, char* args[] )
 
    OpenGLdraw opengl;
    opengl.init(width, height);
+   for(int i=0;i<height*width*3;i++) data[i]=0;
+   //snow sphere
+   sphere s1(vec3(0,-1,0),vec3(0,1,0),1,90,color(255,255,255),0.7,0.3,0.9,0,9);
+   snowman.addSphere(&s1);
+   sphere s2(vec3(0,0.4,0),vec3(0,1,0),0.5,60,color(255,255,255),0.7,0.3,0.9,0,9);
+   snowman.addSphere(&s2);
+   sphere s3(vec3(0,1.0,0),vec3(0,1,0),0.30,90,color(255,255,255),0.7,0.3,0.9,0,9);
+   snowman.addSphere(&s3);
+   plane p1 = plane(vec3(0,-2,0),vec3(0,1,0),4,color(255,255,255),0.7,0.3,0.9,0,9);
+   snowman.addPlane(&p1);
+   //plane
+   plane p2 = plane(vec3(0,0,-2),vec3(0,0,1),4,color(255,0,0),0.7,0.3,0.9,0,9);
+   snowman.addPlane(&p2);
+   plane p3 = plane(vec3(0,0,2),vec3(0,0,-1),4,color(255,0,0),0.7,0.3,0.9,0,9);
+   snowman.addPlane(&p3);
+   plane p4 = plane(vec3(2,0,0),vec3(-1,0,0),4,color(255,0,0),0.7,0.3,0.9,0,9);
+   snowman.addPlane(&p4);
+   plane p5 = plane(vec3(-2,0,0),vec3(1,0,0),4,color(255,0,0),0.7,0.3,0.9,0,9);
+   snowman.addPlane(&p5);
+   plane p6 = plane(vec3(0,2,0),vec3(0,-1,0),4,color(0,255,0),0.7,0.3,0.9,0,9);
+   snowman.addPlane(&p6);
+   //lights
+   light l1 = light(vec3(2,-2,-2),vec3(0,1,0),1/25.0,1,color(255,255,255),0.7,0.3,0.9,0,9);
+   snowman.addLight(&l1);
+   light l2 = light(vec3(-2,-2,-2),vec3(0,1,0),1/25.0,1,color(255,255,255),0.7,0.3,0.9,0,9);
+   snowman.addLight(&l2);
+   light l3 = light(vec3(-2,-2, 2),vec3(0,1,0),1/25.0,1,color(255,255,255),0.7,0.3,0.9,0,9);
+   snowman.addLight(&l3);
+   light l4 = light(vec3(2,-2, 2),vec3(0,1,0),1/25.0,1,color(255,255,255),0.7,0.3,0.9,0,9);
+   snowman.addLight(&l4);
+   //balls
+   sphere b1(vec3(1.5*cos(PI*0/180),-2,1.5*sin(PI*0/180)),vec3(0,1,0),.25,90,color(0,255,255),0.7,0.3,0.9,0,9);
+   snowman.addSphere(&b1);
+   sphere b2(vec3(1.5*cos(PI*30/180),-2,1.5*sin(PI*30/180)),vec3(0,1,0),.25,90,color(255,255,255),0.7,0.3,0.9,0,9);
+   snowman.addSphere(&b2);
+   sphere b3(vec3(1.5*cos(PI*60/180),-2,1.5*sin(PI*60/180)),vec3(0,1,0),.25,90,color(255,128,0),0.7,0.3,0.9,0,9);
+   snowman.addSphere(&b3);
+   sphere b4(vec3(1.5*cos(PI*90/180),-2,1.5*sin(PI*90/180)),vec3(0,1,0),.25,90,color(255,255,255),0.7,0.3,0.9,0,9);
+   snowman.addSphere(&b4);
+   sphere b5(vec3(1.5*cos(PI*120/180),-2,1.5*sin(PI*120/180)),vec3(0,1,0),.25,90,color(255,0,255),0.7,0.3,0.9,0,9);
+   snowman.addSphere(&b5);
+   sphere b6(vec3(1.5*cos(PI*150/180),-2,1.5*sin(PI*150/180)),vec3(0,1,0),.25,90,color(255,255,255),0.7,0.3,0.9,0,9);
+   snowman.addSphere(&b6);
+   sphere b7(vec3(1.5*cos(PI*180/180),-2,1.5*sin(PI*180/180)),vec3(0,1,0),.25,90,color(0,255,255),0.7,0.3,0.9,0,9);
+   snowman.addSphere(&b7);
+   sphere b8(vec3(1.5*cos(PI*210/180),-2,1.5*sin(PI*210/180)),vec3(0,1,0),.25,90,color(255,255,255),0.7,0.3,0.9,0,9);
+   snowman.addSphere(&b8);
+   sphere b9(vec3(1.5*cos(PI*240/180),-2,1.5*sin(PI*240/180)),vec3(0,1,0),.25,90,color(255,128,0),0.7,0.3,0.9,0,9);
+   snowman.addSphere(&b9);
+   sphere b10(vec3(1.5*cos(PI*270/180),-2,1.5*sin(PI*270/180)),vec3(0,1,0),.25,90,color(255,255,255),0.7,0.3,0.9,0,9);
+   snowman.addSphere(&b10);
+   sphere b11(vec3(1.5*cos(PI*300/180),-2,1.5*sin(PI*300/180)),vec3(0,1,0),.25,90,color(255,0,255),0.7,0.3,0.9,0,9);
+   snowman.addSphere(&b11);
+   sphere b12(vec3(1.5*cos(PI*330/180),-2,1.5*sin(PI*330/180)),vec3(0,1,0),.25,90,color(255,255,255),0.7,0.3,0.9,0,9);
+   snowman.addSphere(&b12);
 
    while (glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && glfwWindowShouldClose(window) == 0 )
    {
-      render();
+      snowman.render(data,xoffset,yoffset);
       glClearColor(0.5, 1, 1, 1.0);
       glClear(GL_COLOR_BUFFER_BIT);
       opengl.draw(data, WIDTH, HEIGHT,0,0);

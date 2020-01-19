@@ -97,6 +97,11 @@ class ray{
         vec3 origin,direction;
 
     public:
+        ray(){
+            origin = vec3(0,0,0);
+            direction = vec3(0,0,0);
+        }
+
         ray(vec3 o,vec3 d){
             origin = o;
             direction = d;
@@ -142,5 +147,9 @@ class color{
 
         int getBlue() const{
             return blue;
+        }
+
+        color operator * (double d) const{
+            return color(red*d,green*d,blue*d);
         }
 };
