@@ -1,5 +1,5 @@
 CC = g++
-LIBS = -lGL -lGLU -lglfw -lGLEW
+LIBS = -lGL -lGLU -lglfw -lGLEW -fopenmp
 DEPS = 
 OBJ = main.o
 

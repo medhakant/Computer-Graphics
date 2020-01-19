@@ -63,9 +63,7 @@ class shape{
         double refractive_index;
 
     public:
-
-        shape();
-
+    
         shape(vec3 c,vec3 n,color co,double d,double s,double reflec,double refrac,double refrac_index){
             center = c;
             normal = n;
@@ -109,6 +107,8 @@ class shape{
             return refractive_index;
         }
 
+        virtual bool shapeType(std::string s) const = 0;
+
         virtual bool willIntersect(ray r) const = 0;
 
         virtual double getIntersectionDistance(ray r) const = 0;
@@ -131,6 +131,10 @@ class sphere : public shape{
 
         double getRadius() const{
             return radius;
+        }
+
+        virtual bool shapeType(std::string s) const{
+            return s=="sphere";
         }
 
         virtual bool willIntersect(ray r) const{
@@ -185,6 +189,10 @@ class plane : public shape{
             return length;
         }
 
+        virtual bool shapeType(std::string s) const{
+            return s=="plane";
+        }
+
         bool willIntersect(ray r) const{
             if(r.getDirection().dot(getNormal())==0){
                 return false;
@@ -220,14 +228,12 @@ class light : public shape{
     private:
         double radius;
         double height;
-        vec3 midpoint;
     public:
 
         light(vec3 c,vec3 n,double r,double h,color co,double d,double s,double reflec,double refrac,double refrac_index)
         :shape(c,n,co,d,s,reflec,refrac,refrac_index){
             radius = r;
             height = h;
-            midpoint = ray(c,n).getPoint(h/2.0);
         }
 
         double getRadius() const{
@@ -239,7 +245,11 @@ class light : public shape{
         }
 
         vec3 getMidPoint() const{
-            return midpoint;
+            return ray(getCenter(),getNormal()).getPoint(getHeight()/2.0);
+        }
+
+        virtual bool shapeType(std::string s) const{
+            return s=="light";
         }
 
         bool willIntersect(ray r) const {

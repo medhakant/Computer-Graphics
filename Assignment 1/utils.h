@@ -95,16 +95,31 @@ class vec3{
 class ray{
     private:
         vec3 origin,direction;
+        std::string medium; 
 
     public:
         ray(){
             origin = vec3(0,0,0);
             direction = vec3(0,0,0);
+            medium = "air";
         }
 
         ray(vec3 o,vec3 d){
             origin = o;
             direction = d;
+            medium = "air";
+        }
+
+        void setMediumGlass(){
+            medium = "glass";
+        }
+
+        void setMediumAir(){
+            medium = "air";
+        }
+
+        std::string getMedium() const{
+            return medium;
         }
 
         vec3 getOrigin() const{
@@ -151,5 +166,13 @@ class color{
 
         color operator * (double d) const{
             return color(red*d,green*d,blue*d);
+        }
+
+        color operator + (color const &obj) const{
+            return color(red+obj.getRed(),green+obj.getGreen(),blue+obj.getBlue());
+        }
+
+        color operator / (double d) const{
+            return color(red/d,green/d,blue/d);
         }
 };
