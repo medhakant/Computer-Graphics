@@ -4,7 +4,7 @@
 #define FOVX 60
 #define FOVY 60
 #define MAXDEPTH 4
-#define SPECULAR 10
+#define SPECULAR 5
 #define REFLEC 0.6
 #define REFRAC 1
 #define DA 1

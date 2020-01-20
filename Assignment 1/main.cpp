@@ -75,7 +75,7 @@ void snowman_renderer(){
    //plane
    plane p1 = plane(vec3(0,-2,0),vec3(0,1,0),4,color(255,255,255),1,0,1,0,-1);
    snowman.addPlane(&p1);
-   plane p2 = plane(vec3(0,0,-2),vec3(0,0,1),4,color(255,0,0),1,0,1,0,-1);
+   plane p2 = plane(vec3(0,0,-2),vec3(0,0,1),4,color(255,0,0),0,1,1,0,-1);
    snowman.addPlane(&p2);
    plane p3 = plane(vec3(0,0,2),vec3(0,0,-1),4,color(255,0,0),1,0,1,0,-1);
    snowman.addPlane(&p3);
@@ -172,10 +172,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
       }
    }else{
       if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
-         xrott += -(15*PI)/180.0;
+         xrott += (15*PI)/180.0;
          snowman_renderer();
       }else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
-         xrott += (15*PI)/180.0;
+         xrott += -(15*PI)/180.0;
          snowman_renderer();
       }
    }

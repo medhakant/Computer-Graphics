@@ -45,9 +45,9 @@ class scene{
             for(int i=0;i<height*width*3;i++) data[i] = 0;
             double tanfovx = tan(PI*FOVX/360.0);
             double tanfovy = tan(PI*FOVY/360.0);
-            #pragma omp parallel num_thread(4)
+            #pragma omp parallel num_thread(8)
             for(int i=0;i<height;i++){
-                #pragma omp parallel num_thread(4)
+                #pragma omp parallel num_thread(8) schedule(dynamic,8)
                 for(int j=0;j<width;j++){
                     double xcoor = (j-(WIDTH/2.0))*tanfovx/(WIDTH/2.0);
                     double ycoor = -1*(i-(HEIGHT/2.0))*tanfovy/(HEIGHT/2.0);
@@ -70,12 +70,13 @@ class scene{
                     data[((i*height)+j)*3+1] = std::min(c.getGreen(),255);
                     data[((i*height)+j)*3+2] = std::min(c.getBlue(),255);
                 }
+                std::cout << i << "\n";
             }
         }
 
         bool isLightBlocked(ray r) const{
             std::set<shape*>::iterator it;
-            #pragma omp parallel num_thread(4)
+            #pragma omp parallel num_thread(8)
             for(it=visible_objects.begin();it!=visible_objects.end();it++){
                 if(!(*it)->shapeType("light") && (*it)->willIntersect(r)){
                     return true;
@@ -111,7 +112,7 @@ class scene{
                 }
             }else if(depth<MAXDEPTH){
                 std::set<shape*>::iterator it;
-                #pragma omp parallel num_thread(4) shared data
+                #pragma omp parallel num_thread(8)
                 for(it=all_objects.begin();it!=all_objects.end();it++){
                     if((*it)->willIntersect(r)){
                         double distance = (*it)->getIntersectionDistance(r);
@@ -142,7 +143,7 @@ class scene{
         color getLightIntersection(raytrace rt,shape* s) const{
             color c;
             std::set<light*>::iterator it;
-            #pragma omp parallel num_thread(4) shared data
+            #pragma omp parallel num_thread(8)
             for(it=tubelights.begin();it!=tubelights.end();it++){
                 vec3 ray_dir_to_light = ((*it)->getMidPoint()-rt.getIntersection()).getUnitVector();
                 ray light_ray = ray(rt.getIntersection(),ray_dir_to_light);
