@@ -4,6 +4,7 @@
 #include <set>
 #include <GLFW/glfw3.h>
 #include <iterator>
+#include "omp.h"
 class scene{
     private:
         std::set<light*> tubelights;
@@ -39,17 +40,32 @@ class scene{
         void render(GLubyte* data,double xoffset,double yoffset) const{
             double sintheta = sin(xoffset);
             double costheta = cos(xoffset);
+            vec3 camera = vec3(CAMERAD*sintheta,0,CAMERAD*costheta);
+            double zcoor = -1;
             for(int i=0;i<height*width*3;i++) data[i] = 0;
-            #pragma omp parallel num_thread(4) shared data
+            double tanfovx = tan(PI*FOVX/360.0);
+            double tanfovy = tan(PI*FOVY/360.0);
+            #pragma omp parallel num_thread(4)
             for(int i=0;i<height;i++){
+                #pragma omp parallel num_thread(4)
                 for(int j=0;j<width;j++){
-                    double xcoor = (j-(WIDTH/2.0))*tan(PI*FOVX/360.0)/(WIDTH/2.0);
-                    double ycoor = -1*(i-(HEIGHT/2.0))*tan(PI*FOVY/360.0)/(HEIGHT/2.0);
-                    double zcoor = -1;
+                    double xcoor = (j-(WIDTH/2.0))*tanfovx/(WIDTH/2.0);
+                    double ycoor = -1*(i-(HEIGHT/2.0))*tanfovy/(HEIGHT/2.0);
+                    double xpos = (j+0.25-(WIDTH/2.0))*tanfovx/(WIDTH/2.0);
+                    double ypos = -1*(i+0.25-(HEIGHT/2.0))*tanfovy/(HEIGHT/2.0);
+                    double xneg = (j-0.25-(WIDTH/2.0))*tanfovx/(WIDTH/2.0);
+                    double yneg = -1*(i-0.25-(HEIGHT/2.0))*tanfovy/(HEIGHT/2.0);
                     vec3 dir = vec3(xcoor*costheta+zcoor*sintheta,ycoor,-1*xcoor*sintheta+zcoor*costheta);
-                    vec3 camera = vec3(CAMERAD*sintheta,0,CAMERAD*costheta);
+                    vec3 aa1 = vec3(xpos*costheta+zcoor*sintheta,ypos,-1*xpos*sintheta+zcoor*costheta);
+                    vec3 aa2 = vec3(xneg*costheta+zcoor*sintheta,ypos,-1*xneg*sintheta+zcoor*costheta);
+                    vec3 aa3 = vec3(xneg*costheta+zcoor*sintheta,yneg,-1*xneg*sintheta+zcoor*costheta);
+                    vec3 aa4 = vec3(xpos*costheta+zcoor*sintheta,yneg,-1*xpos*sintheta+zcoor*costheta);
                     ray r = ray(camera,dir);
-                    color c = getIntersectionColor(r,0);
+                    ray a1 = ray(camera,aa1);
+                    ray a2 = ray(camera,aa2);
+                    ray a3 = ray(camera,aa3);
+                    ray a4 = ray(camera,aa4);
+                    color c = (getIntersectionColor(r,0)+getIntersectionColor(a1,0)+getIntersectionColor(a2,0)+getIntersectionColor(a3,0)+getIntersectionColor(a4,0))/5.0;
                     data[((i*height)+j)*3] = std::min(c.getRed(),255);
                     data[((i*height)+j)*3+1] = std::min(c.getGreen(),255);
                     data[((i*height)+j)*3+2] = std::min(c.getBlue(),255);
