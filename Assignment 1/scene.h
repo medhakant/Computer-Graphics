@@ -70,7 +70,7 @@ class scene{
                     data[((i*height)+j)*3+1] = std::min(c.getGreen(),255);
                     data[((i*height)+j)*3+2] = std::min(c.getBlue(),255);
                 }
-                std::cout << i << "\n";
+                // std::cout << i << "\n";
             }
         }
 
@@ -150,9 +150,20 @@ class scene{
                 if(!isLightBlocked(light_ray)){
                     double distance = ((*it)->getMidPoint()-rt.getIntersection()).magnitude();
                     double distance_factor = DA*pow(distance,2) + (DB*distance) + DC;
+                    vec3 n = rt.getNormal().getUnitVector();
                     vec3 h = (ray_dir_to_light - rt.getIncident().getDirection().getUnitVector()).getUnitVector();
+                    vec3 v = rt.getIncident().getDirection().getUnitVector()*-1;
                     double diffuse_component = (s->getDiffuse()*(rt.getNormal().getUnitVector().dot(ray_dir_to_light)));
                     double specular_component = s->getSpecular()*pow(rt.getNormal().getUnitVector().dot(h),SPECULAR);
+                    if(s->getRefractiveIndex()==-2){
+                        double cossq_alpha = pow(h.dot(rt.getNormal().getUnitVector()),2);
+                        double f = F0 + (1-F0)*pow((1-v.dot(h)),5);
+                        double d = exp(-((1/cossq_alpha) -1)/MSQ)/(PI*MSQ*pow(cossq_alpha,2));
+                        double g = std::min(1.0,2*(n.dot(h))*(n.dot(v))/(v.dot(h)));
+                        g = std::min(g,2*(n.dot(h))*(n.dot(ray_dir_to_light))/(v.dot(h)));
+                        double rsk = f*d*g/(4*n.dot(ray_dir_to_light)*(n.dot(v)));
+                        specular_component = (s->getSpecular()*(rt.getNormal().getUnitVector().dot(ray_dir_to_light)))*rsk;
+                    }
                     c = c + s->getColor()*((diffuse_component + specular_component)/distance_factor);
                 }
             }

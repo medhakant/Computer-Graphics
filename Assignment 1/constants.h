@@ -12,3 +12,5 @@
 #define DC 0.1
 #define AMBIENT 0.1
 #define CAMERAD 6
+#define MSQ 1
+#define F0 0.9

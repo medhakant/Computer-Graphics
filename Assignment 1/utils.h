@@ -25,6 +25,18 @@ class vec3{
             this->ispoint = false;
         }
 
+        double getX() const{
+            return x;
+        }
+
+        double getY() const{
+            return y;
+        }
+
+        double getZ() const{
+            return z;
+        }
+
         vec3 operator + (vec3 const &obj) const{
             return vec3(x+obj.x,y+obj.y,z+obj.z);
         }

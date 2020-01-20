@@ -66,11 +66,11 @@ private:
 void snowman_renderer(){
    scene snowman;
    //snow sphere
-   sphere s1(vec3(0,-1,0),vec3(0,1,0),1,90,color(255,255,255),0.65,0.35,0.9,0,-1);
+   sphere s1(vec3(0,-1,0),vec3(0,1,0),1,90,color(255,255,255),0.65,0.35,0.9,0,-2);
    snowman.addSphere(&s1);
-   sphere s2(vec3(0,0.4,0),vec3(0,1,0),0.5,60,color(255,255,255),0.65,0.35,0.9,0,-1);
+   sphere s2(vec3(0,0.4,0),vec3(0,1,0),0.5,60,color(255,255,255),0.65,0.35,0.9,0,-2);
    snowman.addSphere(&s2);
-   sphere s3(vec3(0,1.08,0),vec3(0,1,0),0.25,90,color(255,255,255),0.65,0.35,0.9,0,-1);
+   sphere s3(vec3(0,1.08,0),vec3(0,1,0),0.25,90,color(255,255,255),0.65,0.35,0.9,0,-2);
    snowman.addSphere(&s3);
    //plane
    plane p1 = plane(vec3(0,-2,0),vec3(0,1,0),4,color(255,255,255),1,0,1,0,-1);
