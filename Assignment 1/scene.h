@@ -59,6 +59,7 @@ class scene{
 
         bool isLightBlocked(ray r) const{
             std::set<shape*>::iterator it;
+            #pragma omp parallel num_thread(4)
             for(it=visible_objects.begin();it!=visible_objects.end();it++){
                 if(!(*it)->shapeType("light") && (*it)->willIntersect(r)){
                     return true;
@@ -94,6 +95,7 @@ class scene{
                 }
             }else if(depth<MAXDEPTH){
                 std::set<shape*>::iterator it;
+                #pragma omp parallel num_thread(4) shared data
                 for(it=all_objects.begin();it!=all_objects.end();it++){
                     if((*it)->willIntersect(r)){
                         double distance = (*it)->getIntersectionDistance(r);
@@ -124,6 +126,7 @@ class scene{
         color getLightIntersection(raytrace rt,shape* s) const{
             color c;
             std::set<light*>::iterator it;
+            #pragma omp parallel num_thread(4) shared data
             for(it=tubelights.begin();it!=tubelights.end();it++){
                 vec3 ray_dir_to_light = ((*it)->getMidPoint()-rt.getIntersection()).getUnitVector();
                 ray light_ray = ray(rt.getIntersection(),ray_dir_to_light);
@@ -133,7 +136,7 @@ class scene{
                     vec3 h = (ray_dir_to_light - rt.getIncident().getDirection().getUnitVector()).getUnitVector();
                     double diffuse_component = (s->getDiffuse()*(rt.getNormal().getUnitVector().dot(ray_dir_to_light)));
                     double specular_component = s->getSpecular()*pow(rt.getNormal().getUnitVector().dot(h),SPECULAR);
-                    c = s->getColor()*((diffuse_component + specular_component)/distance_factor);
+                    c = c + s->getColor()*((diffuse_component + specular_component)/distance_factor);
                 }
             }
             return c;

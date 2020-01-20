@@ -178,7 +178,7 @@ class sphere : public shape{
             ray refracted = ray(vec3(0,0,0),vec3(0,0,0));
             if(getRefractiveIndex()>0){
                 double theta1 = acos(abs(normal.dot(r.getDirection().getUnitVector()*-1)));
-                vec3 m = (r.getDirection().getUnitVector() + normal*cos(theta1))/sin(theta1);
+                vec3 m = (r.getDirection().getUnitVector() + normal*cos(theta1))*-1/sin(theta1);
                 if(!(r.getMedium()=="glass" && theta1 > asin(1/getRefractiveIndex()))){
                     double theta2 = asin(sin(theta1)/refrac_index);
                     vec3 refrac_dir = m*sin(theta2) - normal*cos(theta2);    

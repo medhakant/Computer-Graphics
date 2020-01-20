@@ -1,6 +1,6 @@
 CC = g++
 LIBS = -lGL -lGLU -lglfw -lGLEW -fopenmp
-DEPS = 
+CFLAGS = -O3 
 OBJ = main.o
 
 %.o: %.c $(DEPS)
