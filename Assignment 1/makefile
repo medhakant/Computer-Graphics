@@ -1,12 +1,10 @@
 CC = g++
-LIBS = -lGL -lGLU -lglfw -lGLEW -fopenmp
+LIBS = -fopenmp -lGL -lGLU -lglfw -lGLEW
 CFLAGS = -O3 
-OBJ = main.o
+DEPS = scene.cpp main.cpp
 
-%.o: %.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(LIBS)
 
-snowman: $(OBJ)
+snowman: $(DEPS)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 clean:

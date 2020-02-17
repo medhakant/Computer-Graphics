@@ -75,6 +75,7 @@ void snowman_renderer(){
    //plane
    plane p1 = plane(vec3(0,-2,0),vec3(0,1,0),4,color(255,255,255),1,0,1,0,-1);
    snowman.addPlane(&p1);
+   snowman.addVisible(&p1);
    plane p2 = plane(vec3(0,0,-2),vec3(0,0,1),4,color(255,0,0),0,1,1,0,-1);
    snowman.addPlane(&p2);
    plane p3 = plane(vec3(0,0,2),vec3(0,0,-1),4,color(255,0,0),1,0,1,0,-1);

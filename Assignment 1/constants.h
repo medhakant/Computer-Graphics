@@ -1,5 +1,5 @@
-#define HEIGHT 200
-#define WIDTH 200
+#define HEIGHT 300
+#define WIDTH 300
 #define PI 3.14159265
 #define FOVX 60
 #define FOVY 60
