@@ -28,10 +28,10 @@ void main(){
 	vec3 MaterialDiffuseColor = vec3(0,0,0);
 	if(ID==0){
 		MaterialDiffuseColor = Color;
-	}else if(ID==1 || ID==3){
+	}else if(ID==1 || ID==2){
 		MaterialDiffuseColor = texture( myTextureSampler, UV ).rgb;
-	}else if(ID==2){
-		MaterialDiffuseColor = texture( myTextureSampler, vec2(UV.y,UV.x) ).rgb;
+	}else if(ID==3){
+		MaterialDiffuseColor = texture( myTextureSampler, UV ).rgb;
 	}else{
 		vec3 textureColor = texture( myTextureSampler, UV ).rgb;
 		if(textureColor.r + textureColor.g + textureColor.b <2.5){
