@@ -8,7 +8,7 @@ OBJ = shader.o texture.o objloader.o main.o
 	$(CC) -c -o $@ $< $(LIBS)
 
 snowman: $(OBJ)
-	$(CC) -o $@ $^ $(LIBS)
+	$(CC) -o $@ $^ $(LIBS) -O3
 
 clean:
 	rm -f *.o *~ snowman

@@ -649,6 +649,7 @@ int main( void )
 				selection = pickedID;
 			}
 
+			std::cout << "selection" << int(data[0]) << "\n";
 			// glfwSwapBuffers(window);
 			// continue;
 

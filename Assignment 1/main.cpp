@@ -10,7 +10,7 @@ double xoffset = 0;
 double yoffset = 0;
 double xrotb = 0;
 double xrott = 0;
-int t = 0;
+static int t = 0;
 GLubyte data[WIDTH*HEIGHT*3];
 
 static void error_callback(int error, const char* description)
@@ -75,7 +75,7 @@ void snowman_renderer(){
    //plane
    plane p1 = plane(vec3(0,-2,0),vec3(0,1,0),4,color(255,255,255),1,0,1,0,-1);
    snowman.addPlane(&p1);
-   snowman.addVisible(&p1);
+   // snowman.addVisible(&p1);
    plane p2 = plane(vec3(0,0,-2),vec3(0,0,1),4,color(255,0,0),0,1,1,0,-1);
    snowman.addPlane(&p2);
    plane p3 = plane(vec3(0,0,2),vec3(0,0,-1),4,color(255,0,0),1,0,1,0,-1);
@@ -215,7 +215,7 @@ int main( int argc, char* args[] )
       QUIT("gWindow_GLFW","glewInit failed");
    }
 
-   glfwSwapInterval(5);
+   glfwSwapInterval(1);
    glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE);
    glfwSetKeyCallback(window,key_callback);
 
