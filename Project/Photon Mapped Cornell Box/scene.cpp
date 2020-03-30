@@ -38,7 +38,7 @@ void scene::render(GLubyte* data,double xoffset,double yoffset){
                     c = c + getIntersectionColor(r);
                 }
             }
-            c = c/(0.5*pow(aarays,2));
+            c = (c*LIGHT_POW)/pow(aarays,2);
             data[((i*height)+j)*3] = std::min(c.getRed(),255);
             data[((i*height)+j)*3+1] = std::min(c.getGreen(),255);
             data[((i*height)+j)*3+2] = std::min(c.getBlue(),255);

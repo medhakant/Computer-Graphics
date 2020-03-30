@@ -8,8 +8,8 @@
 #define QUIT(m,v)      { fprintf(stderr, "%s:%s\n", m, v); exit(1); }
 double xoffset = 0;
 double yoffset = 0;
-double xrotb = 0;
-double xrott = 0;
+double lightx = 0;
+double lightz = 0;
 static int t = 0;
 GLubyte data[WIDTH*HEIGHT*3];
 static void error_callback(int error, const char* description)
@@ -90,7 +90,7 @@ void cornell_box_renderer(){
    cornell_box.addPlane(&p5);
 
    //lights
-   light l = light(vec3(0,2,0),vec3(0,-1,0),1,color(255,255,255),1,0,0.5,0,-1);
+   light l = light(vec3(lightx,2,lightz),vec3(0,-1,0),1,color(255,255,255),1,0,0.5,0,-1);
    cornell_box.addLight(&l);
    int height = HEIGHT;
    int width = WIDTH;
@@ -107,7 +107,7 @@ void cornell_box_renderer(){
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
    if (key == GLFW_KEY_T && action == GLFW_PRESS){
-      t = (t+1)%3;
+      t = (t+1)%2;
    }
    if(t==0){
       if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
@@ -119,18 +119,16 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
       }
    }else if(t==1){
       if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
-         xrotb += -(15*PI)/180.0;
+         lightx += -0.1;
          cornell_box_renderer();
       }else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
-         xrotb += (15*PI)/180.0;
+         lightx += 0.1;
          cornell_box_renderer();
-      }
-   }else{
-      if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
-         xrott += (15*PI)/180.0;
+      }else if (key == GLFW_KEY_UP && action == GLFW_PRESS){
+         lightz += 0.1;
          cornell_box_renderer();
-      }else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
-         xrott += -(15*PI)/180.0;
+      }else if (key == GLFW_KEY_DOWN && action == GLFW_PRESS){
+         lightz += -0.1;
          cornell_box_renderer();
       }
    }
