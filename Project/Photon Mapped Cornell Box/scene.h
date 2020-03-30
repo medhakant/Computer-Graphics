@@ -4,13 +4,14 @@
 #include <set>
 #include <GLFW/glfw3.h>
 #include <iterator>
-#include "omp.h"
+#include <algorithm>
+#include <omp.h>
 
 class scene{
     private:
-        std::set<light*> tubelights;
-        std::set<shape*> visible_objects;
-        std::set<shape*> all_objects;
+        light * arealight;
+        std::set<shape*> objects;
+        std::vector<photon*> photonmap;
         int height;
         int width;
 
@@ -23,14 +24,18 @@ class scene{
 
         void addPlane(plane* p);
 
-        void addVisible(shape* s);
+        photon* makePhoton() const;
 
-        void render(GLubyte* data,double xoffset,double yoffset) const;
+        photon* getBounce(const photon* init_photon) const;
 
-        bool isLightBlocked(ray r) const;
+        void balancePhoton(int start,int end,int axis);
 
-        color getIntersectionColor(ray r,int depth) const;
+        color searchPhoton(int start,int end,int axis, vec3 intersection) const;
 
-        color getLightIntersection(raytrace rt,shape* s) const;
+        void castPhoton();
+
+        void render(GLubyte* data,double xoffset,double yoffset);
+
+        color getIntersectionColor(ray r) const;
 
 };

@@ -146,7 +146,7 @@ class sphere : public shape{
                 return (t>0 && nearest_distance <= getRadius())?true:false; 
             }else{
                 double axis_length = getRadius()*cos((90-vertical_angle_range)*PI/180);
-                if(abs((r.getPoint(t)-getCenter()).dot(getNormal().getUnitVector()))<axis_length && t>0 && nearest_distance <= getRadius()){
+                if(fabs((r.getPoint(t)-getCenter()).dot(getNormal().getUnitVector()))<axis_length && t>0 && nearest_distance <= getRadius()){
                     return true;
                 }else{
                     return false;
@@ -177,7 +177,7 @@ class sphere : public shape{
             ray reflected = ray(intersection_point,r.getDirection() - normal*2*(r.getDirection().dot(normal)));
             ray refracted = ray(vec3(0,0,0),vec3(0,0,0));
             if(getRefractiveIndex()>0){
-                double theta1 = acos(abs(normal.dot(r.getDirection().getUnitVector()*-1)));
+                double theta1 = acos(fabs(normal.dot(r.getDirection().getUnitVector()*-1)));
                 vec3 m = (r.getDirection().getUnitVector() + normal*cos(theta1))*1/sin(theta1);
                 if(!(r.getMedium()=="glass" && theta1 > asin(1/getRefractiveIndex()))){
                     double theta2 = asin(sin(theta1)/refrac_index);

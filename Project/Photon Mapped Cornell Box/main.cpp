@@ -12,7 +12,6 @@ double xrotb = 0;
 double xrott = 0;
 static int t = 0;
 GLubyte data[WIDTH*HEIGHT*3];
-
 static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error: %s\n", description);
@@ -63,44 +62,46 @@ private:
    }
 };
 
-void snowman_renderer(){
-   scene snowman;
-   //snow sphere
+void cornell_box_renderer(){
+   scene cornell_box;
+   //sphere
    sphere s1(vec3(-0.5,-1,-0.5),vec3(0,1,0),1,90,color(240, 54, 62),0.5,0.5,0.9,0,-2);
-   snowman.addSphere(&s1);
+   cornell_box.addSphere(&s1);
    sphere s2(vec3(-0.3,-1.5,1),vec3(0,1,0),0.5,90,color(141, 245, 66),0.5,0.5,0.9,0,-2);
-   snowman.addSphere(&s2);
+   cornell_box.addSphere(&s2);
    sphere s3(vec3(0.6,-1.5,0.5),vec3(0,1,0),0.5,90,color(62, 127, 240),0.5,0.5,0.9,0,-2);
-   snowman.addSphere(&s3);
+   cornell_box.addSphere(&s3);
 
    //plane
    //floor
    plane p1 = plane(vec3(0,-2,0),vec3(0,1,0),4,color(255,255,193),0.5,0.5,0.9,0,-1);
-   snowman.addPlane(&p1);
+   cornell_box.addPlane(&p1);
    //back wall
    plane p2 = plane(vec3(0,0,-2),vec3(0,0,1),4,color(255,255,193),0.5,0.5,0.9,0,-1);
-   snowman.addPlane(&p2);
+   cornell_box.addPlane(&p2);
    //right wall
    plane p3 = plane(vec3(2,0,0),vec3(-1,0,0),4,color(64,235,52),0.5,0.5,0.9,0,-1);
-   snowman.addPlane(&p3);
+   cornell_box.addPlane(&p3);
    //left wall
    plane p4 = plane(vec3(-2,0,0),vec3(1,0,0),4,color(235,64,52),0.5,0.5,0.9,0,-1);
-   snowman.addPlane(&p4);
+   cornell_box.addPlane(&p4);
    //roof
-   plane p5 = plane(vec3(0,2,0),vec3(0,-1,0),4,color(255,255,153),0.5,0.5,0.9,0,-1);
-   snowman.addPlane(&p5);
+   plane p5 = plane(vec3(0,2,0),vec3(0,-1,0),4,color(255,255,193),0.5,0.5,0.9,0,-1);
+   cornell_box.addPlane(&p5);
 
    //lights
-   int lights = sqrt(NUM_LIGHTS);
-   double len_light = 0.5/lights;
-   for(double i=-0.25;i<=0.25;i+=2*len_light){
-      for(double j=-0.25;j<=0.25;j+=2*len_light){
-         light* l = new light(vec3(i+len_light/10,2,j+len_light/10),vec3(0,-1,0),len_light*2,color(255,255,255),1,0,0.5,0,-1);
-         snowman.addLight(l);
+   light l = light(vec3(0,2,0),vec3(0,-1,0),1,color(255,255,255),1,0,0.5,0,-1);
+   cornell_box.addLight(&l);
+   int height = HEIGHT;
+   int width = WIDTH;
+   for(int i=0;i<=height/2;i++){
+      for(int j=0;j<=width*3;j++){
+      GLubyte temp = data[i*width*3 + j];
+      data[i*width*3 + j] = data[(height-1-i)*width*3 + j];
+      data[(height-1-i)*width*3 + j] = temp;
       }
    }
-
-   snowman.render(data,xoffset,yoffset);
+   cornell_box.render(data,xoffset,yoffset);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -111,26 +112,26 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
    if(t==0){
       if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
          xoffset += -(15*PI)/180.0;
-         snowman_renderer();
+         cornell_box_renderer();
       }else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
          xoffset += (15*PI)/180.0;
-         snowman_renderer();
+         cornell_box_renderer();
       }
    }else if(t==1){
       if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
          xrotb += -(15*PI)/180.0;
-         snowman_renderer();
+         cornell_box_renderer();
       }else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
          xrotb += (15*PI)/180.0;
-         snowman_renderer();
+         cornell_box_renderer();
       }
    }else{
       if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
          xrott += (15*PI)/180.0;
-         snowman_renderer();
+         cornell_box_renderer();
       }else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
          xrott += -(15*PI)/180.0;
-         snowman_renderer();
+         cornell_box_renderer();
       }
    }
 }
@@ -155,7 +156,7 @@ int main( int argc, char* args[] )
    #endif
    }
 
-   GLFWwindow *window = glfwCreateWindow(WIDTH,HEIGHT, "Snow Man", NULL, NULL);
+   GLFWwindow *window = glfwCreateWindow(WIDTH,HEIGHT, "Cornell Box Photon Mapping", NULL, NULL);
    if (!window) {
       glfwTerminate();
       QUIT("gWindow_GLFW", "Could not create Window");
@@ -179,11 +180,10 @@ int main( int argc, char* args[] )
    OpenGLdraw opengl;
    opengl.init(width, height);
    for(int i=0;i<height*width*3;i++) data[i]=0;
-   
 
    while (glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && glfwWindowShouldClose(window) == 0 )
    {
-      snowman_renderer();
+      cornell_box_renderer();
       glClearColor(0.5, 1, 1, 1.0);
       glClear(GL_COLOR_BUFFER_BIT);
       opengl.draw(data, WIDTH, HEIGHT,0,0);

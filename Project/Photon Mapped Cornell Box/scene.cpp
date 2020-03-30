@@ -1,44 +1,28 @@
 #include "scene.h"
 #include <chrono>
+#include<climits>
+#include <random>
 
 using namespace std;
 using namespace std::chrono;
-
+mt19937 mt_rand(time(0));
 scene::scene(){
     height = HEIGHT;
     width = WIDTH;
 }
 
-void scene::addLight(light* l){
-    tubelights.insert(l);
-    visible_objects.insert(l);
-}
-
-void scene::addSphere(shape* s){
-    all_objects.insert(s);
-    visible_objects.insert(s);
-}
-
-void scene::addPlane(plane* p){
-    all_objects.insert(p);
-    visible_objects.insert(p);
-}
-
-void scene::addVisible(shape* s){
-    visible_objects.insert(s);
-}
-
-void scene::render(GLubyte* data,double xoffset,double yoffset) const{
+void scene::render(GLubyte* data,double xoffset,double yoffset){
     time_point<system_clock> start, end;
     duration<double> elapsed_seconds;
     start = system_clock::now(); 
+    castPhoton();
     double sintheta = sin(xoffset);
     double costheta = cos(xoffset);
     vec3 camera = vec3(CAMERAD*sintheta,0,CAMERAD*costheta);
     double zcoor = -1;
-    for(int i=0;i<height*width*3;i++) data[i] = 0;
     double tanfovx = tan(PI*FOVX/360.0);
     double tanfovy = tan(PI*FOVY/360.0);
+    for(int i=0;i<height*width*3;i++) data[i]=0;
     #pragma omp parallel for collapse(2) num_threads(8)
     for(int i=0;i<height;i++){
         for(int j=0;j<width;j++){
@@ -51,108 +35,170 @@ void scene::render(GLubyte* data,double xoffset,double yoffset) const{
                     double ycoor = -1*(i-(HEIGHT/2.0) + (-0.5+length/2 + length*l))*tanfovy/(HEIGHT/2.0);
                     vec3 dir = vec3(xcoor*costheta+zcoor*sintheta,ycoor,-1*xcoor*sintheta+zcoor*costheta);
                     ray r = ray(camera,dir);
-                    c = c + getIntersectionColor(r,0);
+                    c = c + getIntersectionColor(r);
                 }
             }
-            c = c/pow(aarays,2);
+            c = c/(0.5*pow(aarays,2));
             data[((i*height)+j)*3] = std::min(c.getRed(),255);
             data[((i*height)+j)*3+1] = std::min(c.getGreen(),255);
             data[((i*height)+j)*3+2] = std::min(c.getBlue(),255);
         }
-        // std::cout << i << "\n";
     }
     end = system_clock::now(); 
     elapsed_seconds = end - start; 
     cout<<"Render Time: "<<elapsed_seconds.count()<<endl;
 }
 
-bool scene::isLightBlocked(ray r) const{
+
+color scene::getIntersectionColor(ray r) const{
+    std::map<double,shape*> rayintersection;
     std::set<shape*>::iterator it;
-    for(it=visible_objects.begin();it!=visible_objects.end();it++){
-        if(!(*it)->shapeType("light") && (*it)->willIntersect(r) && (*it)->getCenter()!=vec3(0,2,0)){
-            return true;
+    for(it=objects.begin();it!=objects.end();it++){
+        if((*it)->willIntersect(r)){
+            double distance = (*it)->getIntersectionDistance(r);
+            rayintersection.insert(std::make_pair(distance,(*it)));
         }
     }
-    return false;
-}
-
-color scene::getIntersectionColor(ray r,int depth) const{
-    std::map<double,shape*> rayintersection;
-    if(depth==0){
-        std::set<shape*>::iterator it;
-        for(it=visible_objects.begin();it!=visible_objects.end();it++){
-            if((*it)->willIntersect(r)){
-                double distance = (*it)->getIntersectionDistance(r);
-                rayintersection.insert(std::make_pair(distance,(*it)));
-            }
-        }
-        if(rayintersection.size()>0){
-            shape* s = rayintersection.begin()->second;
-            if(s->shapeType("light")){
-                return s->getColor();
-            }else{
-                raytrace rt = s->getIntersection(r);
-                color result = rt.getColor()*AMBIENT + getLightIntersection(rt,s) + getIntersectionColor(rt.getReflected(),depth+1)*s->getReflection()*REFLEC;
-                if(s->getRefractiveIndex()>0 && rt.getRefracted().getDirection().magnitude()>0){
-                    result = result + getIntersectionColor(rt.getRefracted(),depth+1)*s->getRefraction()*REFRAC;
-                }
-                return result;
-            }
-        }else{
-            return color(0,0,0);
-        }
-    }else if(depth<MAXDEPTH){
-        std::set<shape*>::iterator it;
-        for(it=all_objects.begin();it!=all_objects.end();it++){
-            if((*it)->willIntersect(r)){
-                double distance = (*it)->getIntersectionDistance(r);
-                rayintersection.insert(std::make_pair(distance,(*it)));
-            }
-        }
-        if(rayintersection.size()>0){
-            shape* s = rayintersection.begin()->second;
-            if(s->shapeType("light")){
-                return s->getColor();
-            }else{
-                raytrace rt = s->getIntersection(r);
-                color result =  getLightIntersection(rt,s) + getIntersectionColor(rt.getReflected(),depth+1)*s->getReflection()*REFLEC;
-                if(s->getRefractiveIndex()>0 && rt.getRefracted().getDirection().magnitude()>0){
-                    result = result + getIntersectionColor(rt.getRefracted(),depth+1)*s->getRefraction()*REFRAC;
-                }
-                return result;
-            }
-        }else{
-            return color(0,0,0);
-        }
-        return color(0,0,0);
+    if(rayintersection.size()>0){
+        shape* s = rayintersection.begin()->second;
+        double distance = rayintersection.begin()->first;
+        double distance_factor = DA*pow(distance,2) + (DB*distance) + DC;
+        raytrace rt = s->getIntersection(r);
+        return searchPhoton(0,photonmap.size()-1,0,rt.getIntersection())/distance_factor + s->getColor()*AMBIENT;
     }else{
         return color(0,0,0);
     }
 }
 
-color scene::getLightIntersection(raytrace rt,shape* s) const{
-    color c = color(0,0,0);
-    std::set<light*>::iterator it;
-    for(it=tubelights.begin();it!=tubelights.end();it++){
-        vec3 ray_dir_to_light = ((*it)->getMidPoint()-rt.getIntersection()).getUnitVector();
-        double angle = abs(ray_dir_to_light.dot((*it)->getNormal()));
-        ray light_ray = ray(rt.getIntersection(),ray_dir_to_light);
-        if(!isLightBlocked(light_ray)){
-            double distance = ((*it)->getMidPoint()-rt.getIntersection()).magnitude();
-            double distance_factor = DA*pow(distance,2) + (DB*distance) + DC;
-            vec3 n = rt.getNormal().getUnitVector();
-            vec3 h = (ray_dir_to_light - rt.getIncident().getDirection().getUnitVector()).getUnitVector();
-            vec3 v = rt.getIncident().getDirection().getUnitVector()*-1;
-            double diffuse_component = (s->getDiffuse()*(rt.getNormal().getUnitVector().dot(ray_dir_to_light)));
-            double cossq_alpha = pow(h.dot(rt.getNormal().getUnitVector()),2);
-            double f = F0 + (1-F0)*pow((1-v.dot(h)),5);
-            double d = exp(-((1/cossq_alpha) -1)/MSQ)/(PI*MSQ*pow(cossq_alpha,2));
-            double g = std::min(1.0,2*(n.dot(h))*(n.dot(v))/(v.dot(h)));
-            g = std::min(g,2*(n.dot(h))*(n.dot(ray_dir_to_light))/(v.dot(h)));
-            double rsk = f*d*g/(4*n.dot(ray_dir_to_light)*(n.dot(v)));
-            double specular_component = (s->getSpecular()*(rt.getNormal().getUnitVector().dot(ray_dir_to_light)))*rsk;
-            c = c + s->getColor()*(((diffuse_component + specular_component)*LIGHT_POWER)/(distance_factor))*pow(angle,0.5);
+void scene::addLight(light* l){
+    arealight = l;
+}
+
+void scene::addSphere(shape* s){
+    objects.insert(s);
+}
+
+void scene::addPlane(plane* p){
+    objects.insert(p);
+}
+
+photon* scene::makePhoton() const{
+    double x = mt_rand()*0.5/INT_MAX - 0.5;
+    double y = mt_rand()*0.5/INT_MAX - 0.5;
+    double z = mt_rand()*0.5/INT_MAX - 0.5;
+    int llength = arealight->getLength();
+    if(arealight->getNormal().getX()==-1){
+        x = abs(x);
+    }else if(arealight->getNormal().getY()==-1){
+        y = abs(y)*-1;
+    }else if(arealight->getNormal().getX()==-1){
+        z = abs(z);
+    }
+    vec3 direction = vec3(x,y,z);
+    vec3 point_source;
+    if(arealight->getNormal().getX()==-1){
+        double y_s = (mt_rand()*0.5/INT_MAX - 0.5)*llength;
+        double z_s = (mt_rand()*0.5/INT_MAX - 0.5)*llength;
+        point_source = arealight->getCenter() + vec3(0,y_s,z_s);
+    }else if(arealight->getNormal().getY()==-1){
+        double x_s = (mt_rand()*0.5/INT_MAX - 0.5)*llength;
+        double z_s = (mt_rand()*0.5/INT_MAX - 0.5)*llength;
+        point_source = arealight->getCenter() + vec3(x_s,0,z_s);
+    }else if(arealight->getNormal().getX()==-1){
+        double x_s = (mt_rand()*0.5/INT_MAX - 0.5)*llength;
+        double y_s = (mt_rand()*0.5/INT_MAX - 0.5)*llength;
+        point_source = arealight->getCenter() + vec3(x_s,y_s,0);
+    }
+    photon*  p = new photon(ray(point_source,direction),arealight->getColor());
+    return p;
+}
+
+void scene::castPhoton(){
+    for(int i=0;i<MAX_PHOTONS;i++){
+        photon* p = makePhoton();
+        if(mt_rand()*0.5/INT_MAX < 0.2){
+            photonmap.push_back(p);
+        }
+        photon* b = getBounce(p);
+        if(b->getFlag()){
+            photonmap.push_back(b);
         }
     }
-    return c;
+    cout << "GLOBAL MAP: " << photonmap.size() << "\n";
+    balancePhoton(0,photonmap.size()-1,0);
+    cout << "BUILD K-D TREE\n";
 }
+
+photon* scene::getBounce(const photon* init_photon) const{
+    std::map<double,shape*> photonintersection;
+    std::set<shape*>::iterator it;
+    for(it=objects.begin();it!=objects.end();it++){
+        if((*it)->willIntersect(init_photon->getPhotonRay()) && !(init_photon->getBounce()==0 && (*it)->getCenter()==arealight->getCenter())){
+            double distance = (*it)->getIntersectionDistance(init_photon->getPhotonRay());
+            photonintersection.insert(std::make_pair(distance,(*it)));
+        }
+    }
+    if(photonintersection.size()>0){
+        double choice = mt_rand()*0.5/INT_MAX;
+        shape* s = photonintersection.begin()->second;
+        raytrace rt = s->getIntersection(init_photon->getPhotonRay());
+        photon* p = new photon(rt.getReflected(),init_photon->getPhotonColor()*rt.getColor());
+        if(choice < s->getDiffuse()){
+            p->setBounce(MAXDEPTH);
+            p->setFlag();
+            return p;
+        }else{
+            p->setBounce(init_photon->getBounce());
+            p->incrementBounce();
+            if(p->getBounce()>=MAXDEPTH){
+                return p;
+            }else{
+                return getBounce(p);
+            }
+        }
+    }else{
+        photon* p = new photon(ray(vec3(0,0,0),vec3(0,0,0)));
+        return p;
+    }
+}
+
+void scene::balancePhoton(int start,int end,int axis){
+    if(start>=end){
+        return;
+    }else{
+        sort(photonmap.begin()+start,photonmap.begin()+end,
+        [axis](const photon* a, const photon* b) -> bool { 
+            return a->getPhotonRay().getOrigin().getAxis(axis) < b->getPhotonRay().getOrigin().getAxis(axis);
+        });
+        int mid = (start+end)/2;
+        balancePhoton(start,mid-1,(axis+1)%3);
+        balancePhoton(mid+1,end,(axis+1)%3);
+    }
+}
+
+color scene::searchPhoton(int start,int end,int axis, vec3 intersection) const{
+    if(start>end){
+        return color(0,0,0);
+    }else if(start==end){
+        if(intersection.inBox(photonmap[start]->getPhotonRay().getOrigin(),BOUNDING_BOX)){
+            return photonmap[start]->getPhotonColor();
+        }else{
+            return color(0,0,0);
+        }
+    }else{
+        int mid = (start+end)/2;
+        vec3 photonO = photonmap[mid]->getPhotonRay().getOrigin();
+        if(intersection.inBox(photonO,BOUNDING_BOX)){
+            return photonmap[mid]->getPhotonColor() + searchPhoton(start,mid-1,(axis+1)%3,intersection) + searchPhoton(mid+1,end,(axis+1)%3,intersection);
+        }else if(fabs(photonO.getAxis(axis)-intersection.getAxis(axis))>BOUNDING_BOX){
+            if(intersection.getAxis(axis) < photonO.getAxis(axis)){
+                return searchPhoton(start,mid-1,(axis+1)%3,intersection);
+            }else{
+                return searchPhoton(mid+1,end,(axis+1)%3,intersection);
+            }
+        }else{
+            return searchPhoton(start,mid-1,(axis+1)%3,intersection) + searchPhoton(mid+1,end,(axis+1)%3,intersection);
+        }
+    }
+}
+

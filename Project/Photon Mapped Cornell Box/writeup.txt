@@ -1,2 +1,2 @@
-The render uses 5 rays for antialiasing and has 4 reursive depth ray tracing.
-The t key to toggle between camera rotation,ball rotation and light rotation.
+The render uses 4 rays for antialiasing and has 4 bounces for photon.
+The t key to toggle between camera rotation,and light movement.

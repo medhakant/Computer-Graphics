@@ -92,9 +92,9 @@ void snowman_renderer(){
 
    //lights
    int lights = sqrt(NUM_LIGHTS);
-   double len_light = 0.5/lights;
-   for(double i=-0.25;i<=0.25;i+=2*len_light){
-      for(double j=-0.25;j<=0.25;j+=2*len_light){
+   double len_light = 1.0/lights;
+   for(double i=-0.5;i<=0.5;i+=2*len_light){
+      for(double j=-0.5;j<=0.5;j+=2*len_light){
          light* l = new light(vec3(i+len_light/10,2,j+len_light/10),vec3(0,-1,0),len_light*2,color(255,255,255),1,0,0.5,0,-1);
          snowman.addLight(l);
       }
@@ -155,7 +155,7 @@ int main( int argc, char* args[] )
    #endif
    }
 
-   GLFWwindow *window = glfwCreateWindow(WIDTH,HEIGHT, "Snow Man", NULL, NULL);
+   GLFWwindow *window = glfwCreateWindow(WIDTH,HEIGHT, "Cornell Box Ray Tracing", NULL, NULL);
    if (!window) {
       glfwTerminate();
       QUIT("gWindow_GLFW", "Could not create Window");

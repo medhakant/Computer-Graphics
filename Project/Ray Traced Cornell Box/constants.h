@@ -3,9 +3,9 @@
 #define PI 3.14159265
 #define FOVX 60
 #define FOVY 60
-#define MAXDEPTH 4
-#define SPECULAR 1
-#define REFLEC 0.5
+#define MAXDEPTH 1
+#define SPECULAR 0.1
+#define REFLEC 0.1
 #define REFRAC 1
 #define DA 1
 #define DB 0.4
@@ -14,6 +14,6 @@
 #define CAMERAD 6
 #define MSQ 5
 #define F0 1
-#define NUM_LIGHTS 100
-#define AARAYS 4
-#define LIGHT_POWER 0.7
+#define NUM_LIGHTS 40
+#define AARAYS 1
+#define LIGHT_POWER 1.5
