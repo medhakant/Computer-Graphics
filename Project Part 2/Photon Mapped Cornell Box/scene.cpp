@@ -131,12 +131,12 @@ void scene::castPhoton(){
     cout << "GLOBAL MAP: " << global_photonmap.size() << "\n";
     cout << "CAUSTIC MAP: " << caustic_photonmap.size() << "\n";
     balancePhoton(0,caustic_photonmap.size()-1,0,true);
-    cout << "BUILD K-D TREE(GLOBAL)\n";
-    balancePhoton(0,global_photonmap.size()-1,0,false);
     cout << "BUILD K-D TREE(CAUSTICS)\n";
+    balancePhoton(0,global_photonmap.size()-1,0,false);
+    cout << "BUILD K-D TREE(GLOBAL)\n";
 }
 
-photon* scene::getBounce(const photon* init_photon) const{
+photon* scene::getBounce(photon* init_photon) const{
     std::map<double,shape*> photonintersection;
     std::set<shape*>::iterator it;
     for(it=objects.begin();it!=objects.end();it++){
@@ -185,8 +185,8 @@ photon* scene::getBounce(const photon* init_photon) const{
             return p;
         }
     }else{
-        photon* p = new photon(ray(vec3(0,0,0),vec3(0,0,0)));
-        return p;
+        //photon* p = new photon(ray(vec3(0,0,0),vec3(0,0,0)));
+        return init_photon;
     }
 }
 

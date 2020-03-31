@@ -65,11 +65,11 @@ private:
 void cornell_box_renderer(){
    scene cornell_box;
    //sphere
-   sphere s1(vec3(-0.5,-1,-0.5),vec3(0,1,0),1,90,color(235, 64, 52),0.5,0.5,0.9,0,-2);
+   sphere s1(vec3(-0.5,-1,-0.5),vec3(0,1,0),1,90,color(240, 54, 62),0.5,0.5,0.9,0,-2);
    cornell_box.addSphere(&s1);
-   sphere s2(vec3(-0.3,-1.5,1),vec3(0,1,0),0.5,90,color(255,255,255),0.1,0.9,0.15,0.85,1.33);
+   sphere s2(vec3(-0.3,-1.5,1),vec3(0,1,0),0.5,90,color(141, 245, 66),0.5,0.5,0.9,0,-2);
    cornell_box.addSphere(&s2);
-   sphere s3(vec3(0.6,-1.5,0.5),vec3(0,1,0),0.5,90,color(255,255,255),0.1,0.9,0.15,0.85,1.33);
+   sphere s3(vec3(0.6,-1.5,0.5),vec3(0,1,0),0.5,90,color(62, 127, 240),0.5,0.5,0.9,0,-2);
    cornell_box.addSphere(&s3);
 
    //plane

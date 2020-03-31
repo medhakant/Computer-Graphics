@@ -11,8 +11,7 @@ class scene{
     private:
         light * arealight;
         std::set<shape*> objects;
-        std::vector<photon*> global_photonmap;
-        std::vector<photon*> caustic_photonmap;
+        std::vector<photon*> photonmap;
         int height;
         int width;
 
@@ -27,11 +26,11 @@ class scene{
 
         photon* makePhoton() const;
 
-        photon* getBounce(photon* init_photon) const;
+        photon* getBounce(const photon* init_photon) const;
 
-        void balancePhoton(int start,int end,int axis,bool caustic);
+        void balancePhoton(int start,int end,int axis);
 
-        color searchPhoton(int start,int end,int axis, vec3 intersection,bool caustic) const;
+        color searchPhoton(int start,int end,int axis, vec3 intersection) const;
 
         void castPhoton();
 

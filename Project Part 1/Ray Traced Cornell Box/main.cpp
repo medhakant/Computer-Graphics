@@ -8,10 +8,11 @@
 #define QUIT(m,v)      { fprintf(stderr, "%s:%s\n", m, v); exit(1); }
 double xoffset = 0;
 double yoffset = 0;
-double lightx = 0;
-double lightz = 0;
+double xrotb = 0;
+double xrott = 0;
 static int t = 0;
 GLubyte data[WIDTH*HEIGHT*3];
+
 static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error: %s\n", description);
@@ -64,12 +65,12 @@ private:
 
 void cornell_box_renderer(){
    scene cornell_box;
-   //sphere
-   sphere s1(vec3(-0.5,-1,-0.5),vec3(0,1,0),1,90,color(235, 64, 52),0.5,0.5,0.9,0,-2);
+   //snow sphere
+   sphere s1(vec3(-0.5,-1,-0.5),vec3(0,1,0),1,90,color(240, 54, 62),0.5,0.5,0.9,0,-2);
    cornell_box.addSphere(&s1);
-   sphere s2(vec3(-0.3,-1.5,1),vec3(0,1,0),0.5,90,color(255,255,255),0.1,0.9,0.15,0.85,1.33);
+   sphere s2(vec3(-0.3,-1.5,1),vec3(0,1,0),0.5,90,color(141, 245, 66),0.5,0.5,0.9,0,-2);
    cornell_box.addSphere(&s2);
-   sphere s3(vec3(0.6,-1.5,0.5),vec3(0,1,0),0.5,90,color(255,255,255),0.1,0.9,0.15,0.85,1.33);
+   sphere s3(vec3(0.6,-1.5,0.5),vec3(0,1,0),0.5,90,color(62, 127, 240),0.5,0.5,0.9,0,-2);
    cornell_box.addSphere(&s3);
 
    //plane
@@ -86,28 +87,26 @@ void cornell_box_renderer(){
    plane p4 = plane(vec3(-2,0,0),vec3(1,0,0),4,color(235,64,52),0.5,0.5,0.9,0,-1);
    cornell_box.addPlane(&p4);
    //roof
-   plane p5 = plane(vec3(0,2,0),vec3(0,-1,0),4,color(255,255,193),0.5,0.5,0.9,0,-1);
+   plane p5 = plane(vec3(0,2,0),vec3(0,-1,0),4,color(255,255,153),0.5,0.5,0.9,0,-1);
    cornell_box.addPlane(&p5);
 
    //lights
-   light l = light(vec3(lightx,2,lightz),vec3(0,-1,0),1,color(255,255,255),1,0,0.5,0,-1);
-   cornell_box.addLight(&l);
-   int height = HEIGHT;
-   int width = WIDTH;
-   for(int i=0;i<=height/2;i++){
-      for(int j=0;j<=width*3;j++){
-      GLubyte temp = data[i*width*3 + j];
-      data[i*width*3 + j] = data[(height-1-i)*width*3 + j];
-      data[(height-1-i)*width*3 + j] = temp;
+   int lights = sqrt(NUM_LIGHTS);
+   double len_light = 1.0/lights;
+   for(double i=-0.5;i<=0.5;i+=2*len_light){
+      for(double j=-0.5;j<=0.5;j+=2*len_light){
+         light* l = new light(vec3(i+len_light/10,2,j+len_light/10),vec3(0,-1,0),len_light*2,color(255,255,255),1,0,0.5,0,-1);
+         cornell_box.addLight(l);
       }
    }
+
    cornell_box.render(data,xoffset,yoffset);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
    if (key == GLFW_KEY_T && action == GLFW_PRESS){
-      t = (t+1)%2;
+      t = (t+1)%3;
    }
    if(t==0){
       if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
@@ -119,16 +118,18 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
       }
    }else if(t==1){
       if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
-         lightx += -0.1;
+         xrotb += -(15*PI)/180.0;
          cornell_box_renderer();
       }else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
-         lightx += 0.1;
+         xrotb += (15*PI)/180.0;
          cornell_box_renderer();
-      }else if (key == GLFW_KEY_UP && action == GLFW_PRESS){
-         lightz += 0.1;
+      }
+   }else{
+      if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
+         xrott += (15*PI)/180.0;
          cornell_box_renderer();
-      }else if (key == GLFW_KEY_DOWN && action == GLFW_PRESS){
-         lightz += -0.1;
+      }else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
+         xrott += -(15*PI)/180.0;
          cornell_box_renderer();
       }
    }
@@ -154,7 +155,7 @@ int main( int argc, char* args[] )
    #endif
    }
 
-   GLFWwindow *window = glfwCreateWindow(WIDTH,HEIGHT, "Cornell Box Photon Mapping", NULL, NULL);
+   GLFWwindow *window = glfwCreateWindow(WIDTH,HEIGHT, "Cornell Box Ray Tracing", NULL, NULL);
    if (!window) {
       glfwTerminate();
       QUIT("gWindow_GLFW", "Could not create Window");
@@ -178,6 +179,7 @@ int main( int argc, char* args[] )
    OpenGLdraw opengl;
    opengl.init(width, height);
    for(int i=0;i<height*width*3;i++) data[i]=0;
+   
 
    while (glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && glfwWindowShouldClose(window) == 0 )
    {
