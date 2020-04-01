@@ -1,0 +1,2 @@
+The render uses 1 ray for antialiasing and has 4 bounces for photon.
+The t key to toggle between camera rotation,and light movement.

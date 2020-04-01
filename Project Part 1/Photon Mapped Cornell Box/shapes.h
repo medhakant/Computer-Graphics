@@ -146,7 +146,7 @@ class sphere : public shape{
                 return (t>0 && nearest_distance <= getRadius())?true:false; 
             }else{
                 double axis_length = getRadius()*cos((90-vertical_angle_range)*PI/180);
-                if(abs((r.getPoint(t)-getCenter()).dot(getNormal().getUnitVector()))<axis_length && t>0 && nearest_distance <= getRadius()){
+                if(fabs((r.getPoint(t)-getCenter()).dot(getNormal().getUnitVector()))<axis_length && t>0 && nearest_distance <= getRadius()){
                     return true;
                 }else{
                     return false;
@@ -168,9 +168,6 @@ class sphere : public shape{
             double c = pow((r.getOrigin()-getCenter()).magnitude(),2) - pow(getRadius(),2);
             double d = pow(b,2)-4*a*c;
             vec3 intersection_point = r.getPoint((-1*(b+sqrt(d)))/(2*a));
-            if(r.getMedium()=="glass"){
-                intersection_point = r.getPoint(((-1*b) +sqrt(d))/(2*a));
-            }
             vec3 normal = (intersection_point - getCenter()).getUnitVector();
             double refrac_index = getRefractiveIndex();
             if(r.getMedium()=="glass"){
@@ -180,7 +177,7 @@ class sphere : public shape{
             ray reflected = ray(intersection_point,r.getDirection() - normal*2*(r.getDirection().dot(normal)));
             ray refracted = ray(vec3(0,0,0),vec3(0,0,0));
             if(getRefractiveIndex()>0){
-                double theta1 = acos(abs(normal.dot(r.getDirection().getUnitVector()*-1)));
+                double theta1 = acos(fabs(normal.dot(r.getDirection().getUnitVector()*-1)));
                 vec3 m = (r.getDirection().getUnitVector() + normal*cos(theta1))*1/sin(theta1);
                 if(!(r.getMedium()=="glass" && theta1 > asin(1/getRefractiveIndex()))){
                     double theta2 = asin(sin(theta1)/refrac_index);
@@ -250,87 +247,52 @@ class plane : public shape{
 
 class light : public shape{
     private:
-        double radius;
-        double height;
+        double length;
     public:
 
-        light(vec3 c,vec3 n,double r,double h,color co,double d,double s,double reflec,double refrac,double refrac_index)
+        light(vec3 c,vec3 n,double l,color co,double d,double s,double reflec,double refrac,double refrac_index)
         :shape(c,n,co,d,s,reflec,refrac,refrac_index){
-            radius = r;
-            height = h;
+            length = l;
         }
 
-        double getRadius() const{
-            return radius;
-        }
-
-        double getHeight() const{
-            return height;
-        }
-
-        vec3 getMidPoint() const{
-            return ray(getCenter(),getNormal()).getPoint(getHeight()/2.0);
+        double getLength() const{
+            return length;
         }
 
         virtual bool shapeType(std::string s) const{
             return s=="light";
         }
 
-        bool willIntersect(ray r) const {
-            double shortest_distance = abs((getCenter()-r.getOrigin()).dot((r.getDirection()*getNormal()).getUnitVector()));
-            if(shortest_distance > getRadius()){
+        vec3 getMidPoint(){
+            return getCenter();
+        }
+
+        bool willIntersect(ray r) const{
+            if(r.getDirection().dot(getNormal())==0){
                 return false;
             }else{
-                double a = ((getCenter()-r.getOrigin()).dot(r.getDirection()))*(getNormal().dot(r.getDirection()));
-                double b = pow(getNormal().dot(r.getDirection()),2);
-                double c = ((getCenter()-r.getOrigin()).dot(getNormal()))*(r.getDirection().dot(r.getDirection()));
-                double d = (r.getDirection().dot(r.getDirection()))*(getNormal().dot(getNormal()));
-                double distance_along_axis = (a-c)/(d-b);
-                // std::cout << distance_along_axis << "\n";
-                if(distance_along_axis <= getHeight() && distance_along_axis>=0){
+                double t = (getCenter()-r.getOrigin()).dot(getNormal())/(r.getDirection().dot(getNormal()));
+                vec3 point_on_plane = r.getPoint(t);
+                vec3 square_point = (point_on_plane-getCenter()).componentWiseMult(vec3(1,1,1)-getNormal());
+                if(square_point.absolute() < (getLength()/2.0) && t>0){
                     return true;
                 }else{
-                    // a = pow(r.getDirection().magnitude(),2) - 2*pow(r.getDirection().dot(getNormal()),2);
-                    // b = (2*(r.getOrigin()-getCenter()).dot(r.getDirection()) - 4*(r.getOrigin()-getCenter()).dot(getNormal())*r.getDirection().dot(getNormal()) +r.getDirection().dot(getNormal()));
-                    // c = pow((r.getOrigin()-getCenter()).magnitude(),2) - 2*pow((r.getOrigin()-getCenter()).dot(getNormal()),2) + (r.getOrigin()-getCenter()).dot(getNormal()) -pow(getRadius(),2);
-                    // d = pow(b,2) - 4*a*c;
-                    std::vector<double> t;
-                    // if(d>0){
-                    //     double t1 = (-b+sqrt(d))/(2*a);
-                    //     double axis_distance = (r.getPoint(t1)-getCenter()).dot(getNormal());
-                    //     if(t1>0 && axis_distance>=0 && axis_distance<=height){
-                    //         t.push_back(t1);
-                    //     }
-                    //     double t2 = (-b-sqrt(d))/(2*a);
-                    //     axis_distance = (r.getPoint(t2)-getCenter()).dot(getNormal());
-                    //     if(t2>0 && axis_distance>=0 && axis_distance<=height){
-                    //         t.push_back(t2);
-                    //     }
-                    // }
-                    double t3 = (getCenter()-r.getOrigin()).dot(getNormal())/(r.getDirection().dot(getNormal()));
-                    if(t3>0 && (r.getPoint(t3)-getCenter()).magnitude() <= getRadius()){
-                        t.push_back(t3);
-                    }
-                    vec3 end_center = ray(getCenter(),getNormal()).getPoint(getHeight());
-                    double t4 = (end_center-r.getOrigin()).dot(getNormal())/(r.getDirection().dot(getNormal()));
-                    if(t4>0 && (r.getPoint(t4)-end_center).magnitude() <= getRadius()){
-                        t.push_back(t4);
-                    }
-                    if(t.size()>0){
-                        return true;
-                    }
-
+                    return false;
                 }
-                return false;              
             }
         }
 
         double getIntersectionDistance(ray r) const{
-            return (r.getOrigin()-getMidPoint()).magnitude();
+            double t = (getCenter()-r.getOrigin()).dot(getNormal())/(r.getDirection().dot(getNormal()));
+            return t;
         }
 
         raytrace getIntersection(ray r) const{
-            return raytrace(getMidPoint(),r,vec3(0,0,0),ray(vec3(0,0,0),vec3(0,0,0)),ray(vec3(0,0,0),vec3(0,0,0)),getColor());
+            double t = (getCenter()-r.getOrigin()).dot(getNormal())/(r.getDirection().dot(getNormal()));
+            vec3 intersection_point = r.getPoint(t);
+            vec3 normal = getNormal().getUnitVector();
+            ray reflected = ray(intersection_point,r.getDirection() - normal*2*(r.getDirection().dot(normal)));
+            return raytrace(intersection_point,r,normal,reflected,ray(vec3(0,0,0),vec3(0,0,0)),getColor());
         }
 
 };
