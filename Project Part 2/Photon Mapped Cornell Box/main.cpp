@@ -65,44 +65,36 @@ private:
 void cornell_box_renderer(){
    scene cornell_box;
    //sphere
-   sphere s1(vec3(-0.5,-1,-0.5),vec3(0,1,0),1,90,color(235, 64, 52),0.5,0.5,0.9,0,-2);
+   sphere s1(vec3(-0.2,-1,-0.2),vec3(0,1,0),1,90,color(235, 64, 52),0.9,0.1,0.9,0,-2);
    cornell_box.addSphere(&s1);
-   sphere s2(vec3(-0.3,-1.5,1),vec3(0,1,0),0.5,90,color(255,255,255),0.1,0.9,0.15,0.85,1.33);
+   sphere s2(vec3(0,-1.5,1.3),vec3(0,1,0),0.5,90,color(255,255,255),0.1,0.9,0.1,0.9,1.33);
    cornell_box.addSphere(&s2);
-   sphere s3(vec3(0.6,-1.5,0.5),vec3(0,1,0),0.5,90,color(255,255,255),0.1,0.9,0.15,0.85,1.33);
+   sphere s3(vec3(0.9,-1.5,0.8),vec3(0,1,0),0.5,90,color(255,255,255),0.1,0.9,0.1,0.9,1.33);
    cornell_box.addSphere(&s3);
 
    //plane
    //floor
-   plane p1 = plane(vec3(0,-2,0),vec3(0,1,0),4,color(255,255,193),0.5,0.5,0.9,0,-1);
+   plane p1 = plane(vec3(0,-2,0),vec3(0,1,0),4,color(255,255,193),0.9,0.1,0.9,0,-1);
    cornell_box.addPlane(&p1);
    //back wall
-   plane p2 = plane(vec3(0,0,-2),vec3(0,0,1),4,color(255,255,193),0.5,0.5,0.9,0,-1);
+   plane p2 = plane(vec3(0,0,-2),vec3(0,0,1),4,color(255,255,193),0.9,0.1,0.9,0,-1);
    cornell_box.addPlane(&p2);
    //right wall
-   plane p3 = plane(vec3(2,0,0),vec3(-1,0,0),4,color(64,235,52),0.5,0.5,0.9,0,-1);
+   plane p3 = plane(vec3(2,0,0),vec3(-1,0,0),4,color(64,235,52),0.9,0.1,0.9,0,-1);
    cornell_box.addPlane(&p3);
    //left wall
-   plane p4 = plane(vec3(-2,0,0),vec3(1,0,0),4,color(235,64,52),0.5,0.5,0.9,0,-1);
+   plane p4 = plane(vec3(-2,0,0),vec3(1,0,0),4,color(235,64,52),0.9,0.1,0.9,0,-1);
    cornell_box.addPlane(&p4);
    //roof
-   plane p5 = plane(vec3(0,2,0),vec3(0,-1,0),4,color(255,255,193),0.5,0.5,0.9,0,-1);
+   plane p5 = plane(vec3(0,2,0),vec3(0,-1,0),4,color(255,255,193),0.9,0.1,0.9,0,-1);
    cornell_box.addPlane(&p5);
 
    //lights
    light l = light(vec3(lightx,2,lightz),vec3(0,-1,0),1,color(255,255,255),1,0,0.5,0,-1);
    cornell_box.addLight(&l);
-   int height = HEIGHT;
-   int width = WIDTH;
-   for(int i=0;i<=height/2;i++){
-      for(int j=0;j<=width*3;j++){
-      GLubyte temp = data[i*width*3 + j];
-      data[i*width*3 + j] = data[(height-1-i)*width*3 + j];
-      data[(height-1-i)*width*3 + j] = temp;
-      }
-   }
    cornell_box.render(data,xoffset,yoffset);
 }
+
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -119,16 +111,16 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
       }
    }else if(t==1){
       if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
-         lightx += -0.1;
+         lightx += -0.25;
          cornell_box_renderer();
       }else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
-         lightx += 0.1;
+         lightx += 0.25;
          cornell_box_renderer();
       }else if (key == GLFW_KEY_UP && action == GLFW_PRESS){
-         lightz += 0.1;
+         lightz += 0.25;
          cornell_box_renderer();
       }else if (key == GLFW_KEY_DOWN && action == GLFW_PRESS){
-         lightz += -0.1;
+         lightz += -0.25;
          cornell_box_renderer();
       }
    }

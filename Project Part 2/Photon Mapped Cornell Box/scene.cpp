@@ -35,7 +35,7 @@ void scene::render(GLubyte* data,double xoffset,double yoffset){
                     double ycoor = -1*(i-(HEIGHT/2.0) + (-0.5+length/2 + length*l))*tanfovy/(HEIGHT/2.0);
                     vec3 dir = vec3(xcoor*costheta+zcoor*sintheta,ycoor,-1*xcoor*sintheta+zcoor*costheta);
                     ray r = ray(camera,dir);
-                    c = c + getIntersectionColor(r);
+                    c = c + getIntersectionColor(r,0);
                 }
             }
             c = c/pow(aarays,2);
@@ -47,26 +47,44 @@ void scene::render(GLubyte* data,double xoffset,double yoffset){
     end = system_clock::now(); 
     elapsed_seconds = end - start; 
     cout<<"Render Time: "<<elapsed_seconds.count()<<endl;
+    global_photonmap.clear();
+    caustic_photonmap.clear();
 }
 
 
-color scene::getIntersectionColor(ray r) const{
-    std::map<double,shape*> rayintersection;
-    std::set<shape*>::iterator it;
-    for(it=objects.begin();it!=objects.end();it++){
-        if((*it)->willIntersect(r)){
-            double distance = (*it)->getIntersectionDistance(r);
-            rayintersection.insert(std::make_pair(distance,(*it)));
-        }
-    }
-    if(rayintersection.size()>0){
-        shape* s = rayintersection.begin()->second;
-        double distance = rayintersection.begin()->first;
-        double distance_factor = DA*pow(distance,2) + (DB*distance) + DC;
-        raytrace rt = s->getIntersection(r);
-        return (searchPhoton(0,global_photonmap.size()-1,0,rt.getIntersection(),false)*LIGHT_POW/distance_factor) + s->getColor()*AMBIENT + (searchPhoton(0,caustic_photonmap.size()-1,0,rt.getIntersection(),true)*CAUSTIC_POW/distance_factor);
-    }else{
+color scene::getIntersectionColor(ray r,int depth) const{
+    if(depth>MAXDEPTH){
         return color(0,0,0);
+    }else{
+        std::map<double,shape*> rayintersection;
+        std::set<shape*>::iterator it;
+        for(it=objects.begin();it!=objects.end();it++){
+            if((*it)->willIntersect(r)){
+                double distance = (*it)->getIntersectionDistance(r);
+                rayintersection.insert(std::make_pair(distance,(*it)));
+            }
+        }
+        if(rayintersection.size()>0){
+            shape* s = rayintersection.begin()->second;
+            double distance = rayintersection.begin()->first;
+            double distance_factor = DA*pow(distance,2) + (DB*distance) + DC;
+            raytrace rt = s->getIntersection(r);
+            if(s->shapeType("light") && depth>0){
+                return color(0,0,0);
+            }else if(RAYPHOTON){
+                if(s->getRefractiveIndex()>0){
+                    return (searchPhoton(0,global_photonmap.size()-1,0,rt.getIntersection(),false)*LIGHT_POW/distance_factor) + s->getColor()*AMBIENT + (searchPhoton(0,caustic_photonmap.size()-1,0,rt.getIntersection(),true)*CAUSTIC_POW/distance_factor) + getIntersectionColor(rt.getReflected(),depth+1)*s->getReflection()*s->getSpecular()*REFLEC + getIntersectionColor(rt.getRefracted(),depth+1)*s->getRefraction()*REFRAC;
+                }else if(s->shapeType("sphere")){
+                    return (searchPhoton(0,global_photonmap.size()-1,0,rt.getIntersection(),false)*LIGHT_POW/distance_factor) + s->getColor()*AMBIENT + (searchPhoton(0,caustic_photonmap.size()-1,0,rt.getIntersection(),true)*CAUSTIC_POW/distance_factor) + getIntersectionColor(rt.getReflected(),depth+1)*s->getReflection()*s->getSpecular()*REFLEC;
+                }else{
+                    return (searchPhoton(0,global_photonmap.size()-1,0,rt.getIntersection(),false)*LIGHT_POW/distance_factor) + s->getColor()*AMBIENT + (searchPhoton(0,caustic_photonmap.size()-1,0,rt.getIntersection(),true)*CAUSTIC_POW/distance_factor) + getIntersectionColor(rt.getReflected(),depth+1)*s->getReflection()*s->getSpecular()*REFLEC;
+                }
+            }else{
+                return (searchPhoton(0,global_photonmap.size()-1,0,rt.getIntersection(),false)*LIGHT_POW/distance_factor) + s->getColor()*AMBIENT + (searchPhoton(0,caustic_photonmap.size()-1,0,rt.getIntersection(),true)*CAUSTIC_POW/distance_factor);
+            }
+        }else{
+            return color(0,0,0);
+        }
     }
 }
 
@@ -91,6 +109,9 @@ photon* scene::makePhoton() const{
         x = abs(x);
     }else if(arealight->getNormal().getY()==-1){
         y = abs(y)*-1;
+        if(mt_rand()*0.5/INT_MAX < 0.2){
+            y = abs(y)*-1 -0.01;
+        }
     }else if(arealight->getNormal().getX()==-1){
         z = abs(z);
     }
@@ -156,13 +177,13 @@ photon* scene::getBounce(photon* init_photon) const{
             }
             choice = mt_rand()*0.5/INT_MAX;
             if(choice < s->getDiffuse()){
-                p->setBounce(MAXDEPTH+1);
+                p->setBounce(MAXPHOTONBOUNCE+1);
                 p->setFlag();
                 return p;
             }else{
                 p->setBounce(init_photon->getBounce());
                 p->incrementBounce();
-                if(p->getBounce()>MAXDEPTH){
+                if(p->getBounce()>MAXPHOTONBOUNCE){
                     p->setFlag();
                     return p;
                 }else{
@@ -174,7 +195,7 @@ photon* scene::getBounce(photon* init_photon) const{
             p->setCaustic();
             p->setBounce(init_photon->getBounce());
             p->incrementBounce();
-            if(p->getBounce()>MAXDEPTH){
+            if(p->getBounce()>MAXPHOTONBOUNCE){
                 p->setFlag();
                 return p;
             }else{
@@ -185,8 +206,8 @@ photon* scene::getBounce(photon* init_photon) const{
             return p;
         }
     }else{
-        //photon* p = new photon(ray(vec3(0,0,0),vec3(0,0,0)));
-        return init_photon;
+        photon* p = new photon(ray(vec3(0,0,0),vec3(0,0,0)));
+        return p;
     }
 }
 
@@ -224,7 +245,7 @@ color scene::searchPhoton(int start,int end,int axis, vec3 intersection,bool cau
             return color(0,0,0);
         }else if(start==end){
             if(intersection.inBox(caustic_photonmap[start]->getPhotonRay().getOrigin(),BOUNDING_BOX)){
-                return caustic_photonmap[start]->getPhotonColor();
+                return caustic_photonmap[start]->getPhotonColor()/((caustic_photonmap[start]->getPhotonRay().getOrigin()-intersection).magnitude()*DD + DE);
             }else{
                 return color(0,0,0);
             }
@@ -232,7 +253,7 @@ color scene::searchPhoton(int start,int end,int axis, vec3 intersection,bool cau
             int mid = (start+end)/2;
             vec3 photonO = caustic_photonmap[mid]->getPhotonRay().getOrigin();
             if(intersection.inBox(photonO,BOUNDING_BOX)){
-                return caustic_photonmap[mid]->getPhotonColor() + searchPhoton(start,mid-1,(axis+1)%3,intersection,caustic) + searchPhoton(mid+1,end,(axis+1)%3,intersection,caustic);
+                return caustic_photonmap[mid]->getPhotonColor()/((caustic_photonmap[mid]->getPhotonRay().getOrigin()-intersection).magnitude()*DD + DE) + searchPhoton(start,mid-1,(axis+1)%3,intersection,caustic) + searchPhoton(mid+1,end,(axis+1)%3,intersection,caustic);
             }else if(fabs(photonO.getAxis(axis)-intersection.getAxis(axis))>BOUNDING_BOX){
                 if(intersection.getAxis(axis) < photonO.getAxis(axis)){
                     return searchPhoton(start,mid-1,(axis+1)%3,intersection,caustic);
@@ -248,7 +269,7 @@ color scene::searchPhoton(int start,int end,int axis, vec3 intersection,bool cau
             return color(0,0,0);
         }else if(start==end){
             if(intersection.inBox(global_photonmap[start]->getPhotonRay().getOrigin(),BOUNDING_BOX)){
-                return global_photonmap[start]->getPhotonColor();
+                return global_photonmap[start]->getPhotonColor()/((global_photonmap[start]->getPhotonRay().getOrigin()-intersection).magnitude()*DD + DE);
             }else{
                 return color(0,0,0);
             }
@@ -256,7 +277,7 @@ color scene::searchPhoton(int start,int end,int axis, vec3 intersection,bool cau
             int mid = (start+end)/2;
             vec3 photonO = global_photonmap[mid]->getPhotonRay().getOrigin();
             if(intersection.inBox(photonO,BOUNDING_BOX)){
-                return global_photonmap[mid]->getPhotonColor() + searchPhoton(start,mid-1,(axis+1)%3,intersection,caustic) + searchPhoton(mid+1,end,(axis+1)%3,intersection,caustic);
+                return global_photonmap[mid]->getPhotonColor()/((global_photonmap[mid]->getPhotonRay().getOrigin()-intersection).magnitude()*DD + DE) + searchPhoton(start,mid-1,(axis+1)%3,intersection,caustic) + searchPhoton(mid+1,end,(axis+1)%3,intersection,caustic);
             }else if(fabs(photonO.getAxis(axis)-intersection.getAxis(axis))>BOUNDING_BOX){
                 if(intersection.getAxis(axis) < photonO.getAxis(axis)){
                     return searchPhoton(start,mid-1,(axis+1)%3,intersection,caustic);

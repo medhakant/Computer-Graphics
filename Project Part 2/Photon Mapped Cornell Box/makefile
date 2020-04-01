@@ -1,7 +1,7 @@
-CC = clang++
-LIBS = -fopenmp -lGL -lGLU -lglfw -lGLEW -lglut
+CC = g++
+LIBS = -fopenmp -lGL -lGLU -lglfw -lGLEW
 CFLAGS = -O3
-DEPS = scene.cpp main.cpp
+DEPS = constants.cpp utils.cpp shapes.cpp scene.cpp main.cpp
 
 
 cornell_box: $(DEPS)
